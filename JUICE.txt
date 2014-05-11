@@ -1,0 +1,809 @@
+Juice Authoring Tool
+
+
+Introduction
+
+Juice is a new technology for distributing executable content across the World Wide Web. In this respect, it 
+is similar to Java from Sun Microsystems. However, as we will try to explain in the following, Juice differs 
+from Java in several important aspects that allow it to outperform Java in many "downloadable Applets" 
+applications.
+
+Juice is intended to be a complement to Java, giving users a choice: Java or Juice. Juice isn't simply a 
+"Java-lookalike" that we have created in quick reaction to Sun Microsystems' Java announcement. Quite to 
+the contrary, work on Juice has preceded Java by several years, but it all happened in an academic 
+environment with more limited resources than available at Sun. 
+
+Juice grew out of the Oberon research project headed by Niklaus Wirth, the inventor of the Pascal and 
+Modula programming languages. His aim was to invent a language that was at once simple and safe to use. 
+The new language should also support the object-oriented programming paradigm, be efficiently 
+compilable, and applicable to a wide range of programming tasks from systems programming to teaching. 
+A language with these properties was defined by Wirth in 1988 and given the name Oberon. 
+
+At first sight, Oberon and Java seem to be as different as two languages can possibly be. Oberon looks a lot 
+like Pascal (not very surprising, since they were both invented by the same person), and Java looks a lot 
+like C (thereby appearing "familiar" to many programmers). A closer comparison of Oberon and Java, 
+however, yields surprisingly many similarities: both languages 
+	* 	are strongly typed while permitting the definition of "extended" types that are 
+		backward-compatible with their ancestors,
+ 	*	prohibit pointer arithmetic and mandate the presence of a garbage collector in 
+ 		their run-time environment, and
+ 	*	provide the notion of modular "packages" that are compiled separately and 
+ 		dynamically linked at run-time 
+
+Juice is to the Oberon language what the Java Virtual Machine is to the Java language: the means of 
+distributing portable software. It encompasses three key components
+ 	*	an architecture-neutral software distribution format,
+	*	a compiler that translates from Oberon into the Slim Binary portable format, and
+ 	*	a plug-in that enables the Netscape and Internet Explorer browser to run Juice applets 
+
+To the technical layman, the most notable difference between comparable Juice and Java applets is 
+probably that the Juice version of any applet is likely to run a lot faster than its Java counterpart. Rather 
+than being interpreted, as Java applets normally are, Juice always compiles each applet into the native code 
+of the target machine before it begins execution. Once that an applet begins executing, it runs at the full 
+speed of compiled code. Juice's on-the-fly compilation process is not only exceptionally fast, but it also 
+generates object code that is comparable in quality to commercial C compilers. 
+
+Further, the portable Slim Binary representation is denser than Java byte-codes. Users with slow 
+connections to the Internet save time by downloading Juice applets rather than Java applets of the same 
+functionality. In fact, the time saved by the faster downloading normally more than compensates for the on-
+the-fly compilation phase.
+
+How then, do a few academic researchers manage to come up with a better on-the-fly compiler than a 
+whole industry of software companies? Well, the key to Juice's effectiveness isn't really found in the 
+compiler technology embedded within the Netscape plug-in, but in the Juice software distribution format 
+itself: Behind the scenes, Juice and Java differ by far more than one might expect.
+
+Java's distribution format is a sequence of so-called byte-codes: the inventors of Java thought up an "ideal" 
+processor designed specifically for running Java programs and use the instruction set of this ideal processor 
+as the "intermediate language" in which Java programs are shipped. Hence, on the programmer's side, a 
+Java compiler translates the source into a byte-code sequence, and on the side of the eventual consumer, a 
+byte-code interpreter simulates the ideal Java processor. It is entirely conceivable that the ideal Java 
+processor can actually be implemented in hardware, and Sun has actually already announced such 
+processors.
+
+Juice's distribution format, on the other hand, is far more complex. It is based on a tree-shaped program 
+representation as is typically used transiently within optimizing compilers. Rather than containing a linear 
+code-sequence that can be interpreted byte-by-byte, a Juice-encoded applet contains a compressed tree that 
+describes the actions of the original program. The tree preserves the control-flow structure of the original 
+program, which makes it much easier to perform code optimization while the tree is translated into the 
+native instruction set of the target machine.
+
+As an example of what kinds of optimizations may be beneficial, consider a modern processor that has 
+several functional units. These require a certain instruction-mix in order to operate at top speed. By re-
+ordering certain mutually independent instructions, a better instruction-mix may be achieved. A tree-based 
+encoding maintains the notion of a basic block and makes it relatively easy to decide if two instructions are 
+mutually independent. This is not so simple with a linear instruction stream, such as Java byte-codes, in 
+which any instruction can potentially be the target of a branch.
+
+Further, our tree-based encoding avoids many of the security issues that are difficult to solve in Java, or in 
+any virtual-machine representation for that matter. By the very definition of our tree-encoding scheme, it is 
+impossible to encode a tree that violates scoping rules of our source language. Such an "illegal" program 
+cannot even be constructed by hand. Java's byte-code instructions, on the other hand, are at a much lower 
+semantic level. Although it is possible to verify that a given byte-code sequence doesn't perform any illegal 
+action, this requires data-flow analysis and a partial repetition of the compiler's integrity checks. The tree-
+based Juice distribution format in effect makes this particular data-flow analysis unnecessary. It also allows 
+for highly efficient load-time integrity checking, as every node in the encoded tree is fully typed.
+
+
+
+
+Writing the First Applet
+
+This chapter gives a first stepwise introduction in how to write your first simple "Hello World" applet and 
+how to execute it in the Oberon environment. If your are not already familiar with the Oberon system, we 
+strongly recommend that you first read the GettingStarted.Text to learn how to use the Oberon graphical 
+user interface and how to operate the compiler.
+
+
+1) Write and Compile a New Applet
+
+The first step on the way to a new applet is to write the source code and to compile it. You can either do 
+this by writing a new source file from scratch or by extending the skeleton module that is provided within 
+this version. The latter is much easier for beginners since the skeleton module already implements the basic 
+functionality that is needed for an average applet. Extending this module and tailoring it for your needs can 
+be done very easily and in a short period of time.
+
+First, open the skeleton module in order to write a first "Hello World" applet. You can do this by executing 
+the following command.
+		
+		Desktops.OpenDoc AppletSkeleton.Mod
+	
+You should see a new window that contains the AppletSkeleton module. Change the name of the document 
+to HelloWorldApplets.Mod and the name of the module to HelloWorldApplets. Then store the document 
+by clicking on the "Store" button. After having done this, add the following three, green marked lines to the 
+DoUpdate() procedure. 
+
+	PROCEDURE DoUpdate (me: Applet);
+	BEGIN
+		(* Draw applet here. You me.device for drawing operations. *)
+		JuiceDevices.Setup(me.device);
+		JuiceDevices.String(20, 20, "Hello World!");
+		JuiceDevices.Restore(me.device)
+	END DoUpdate;
+
+The DoUpdate() procedure is always called when the applet needs to be redrawn. Since we only want to 
+add code to write "Hello World!", the only statements that we need to insert is for setting up the graphics 
+device, for drawing the string at position (20, 20), and for restoring the graphics device.
+
+Second, compile the source file with the Oberon compiler. Note, that there is no separate version of a Juice 
+compiler. Both the Juice and the Oberon compiler are one and the same for your convenience. Use the 
+following command to compile the module:
+
+	Compiler.Compile *\s
+
+
+2) Write an Applet Description File (.adf)
+
+You've just completed the first step - writing and compiling the applet source file. In a second step you 
+have to write an applet description file. Applet description files serve two purposes: First, they specify how 
+to create a new applet by defining a creator procedure (similar to an Oberon command) and second, they 
+specify parameters that are passed to the newly created applet. Applet description filenames always end 
+with the extension .adf. 
+Open a new HelloWorldApplet.adf file for editing by executing the following command:
+
+	Desktops.OpenDoc HelloWorldApplet.adf (TextDocs.NewDoc)
+	
+Note, that you cannot open the applet description file with a MR-interclick, as you normally do with text 
+files. You have to specify the document's creator in brackets. There are good reasons for this, as you will 
+see a little later.
+Add the following line to the adf-file:
+
+	HelloWorldApplets.NewApplet
+
+The first line in the adf-file always specifies the procedure that will be called when creating a new applet. 
+This procedure can have an arbitrary name but has to be implemented for proper execution of the applet. 
+Store the applet as soon as you have added the above line. Since not all applications that support Juice 
+applets (e.g. Netscape Navigator, MS Internet Explorer) have knowledge about the Oberon file-formats, 
+you have to store this file as an ASCII-text file. Choose either one of the following commands to do so.
+
+	EditTools.StoreAscii *	if you are working under Windows 95
+	EditTools.StoreMac *	if you are working under the MacOS
+
+
+3) Executing an Applet
+
+Executing an applet can easily be done by either executing the following command
+
+	Desktops.OpenDoc HelloWorldApplet.adf
+	
+or by an MR-interclick on the name HelloWorldApplet.adf. As you can see now, interclicking on the name 
+of the applet description file is used to run the applet. Since normally you will change the adf-file much 
+less than you will execute the source file, this solution is the most practical.
+
+
+
+
+Adding an Applet to a HTML-Page
+
+This chapter explains, how to integrate a Juice applet into a HTML-page. HTML-pages which contain 
+Juice-applets cannot only be used in Oberon, but also in Netscape Navigator and in Microsoft's Internet 
+Explorer. The latter two require that you download and install the Juice Netscape plug-in from our web-
+server (http://www.ics.uci.edu/~juice).
+The first step in creating a web-page that contains a Juice applet is to open a new text document.
+
+	Desktops.OpenDoc HelloWorld.html (TextDocs.NewDoc)
+	
+Now add the following lines to the document. They represent a very simple web page that displays the 
+string "This is a simple HelloWorld Juice-applet:" followed by the HelloWorld applet.
+	
+	<HTML>
+		<HEAD> <TITLE>HelloWorld Juice Applet</TITLE> </HEAD>
+		<BODY>
+		  This is a simple HelloWorld Juice-applet:
+		  <EMBED SRC="HelloWorldApplet.adf" WIDTH=100 HEIGHT=100>
+		</BODY>
+	<HTML>
+
+Juice applets are always inserted into a HTML page with the EMBED-tag. The EMBED-tag consists of the 
+<EMBED> keyword and one or more additional options. The most important options are given in the table 
+below.
+
+	SRC:	Specifies the applet description file (.adf) that is used to create the new applet. 
+		This option is mandatory for all Juice applets. 
+	WIDTH:	Specifies the width of the applet in screen pixels
+	HEIGHT:	Specifies the height of the applet in screen pixels
+	ALIGN:	Specifies alignment options (e.g. CENTER, TOP, LEFT, ...)
+	
+After having edited the HTML file, store it with one of the following commands.
+
+	EditTools.StoreAscii *	if you are working under Windows 95
+	EditTools.StoreMac *	if you are working under the MacOS
+
+To see the result in Oberon, reopen the HTML-document with a MR-interclick on the name 
+HelloWorld.html or with the following command:
+
+	Desktops.OpenDoc HelloWorld.html
+
+Alternatively, you can also drag the HelloWorld.html file onto Netscape Navigator or Microsoft's Internet 
+Explorer. However, both the HelloWorldApplet.adf-file and the object-file (HelloWorldApplets.Obj) have 
+to be located in the same directory as the HelloWorld.html-file. (This restriction is imposed by both Web-
+browsers). 
+
+
+Important Notes: 
+
+1) As soon as you have finished developing the applet and the web-page you may want to copy all the files 
+to a web server for public use. However, this requires that your HTML-server sends the "juice/applet" 
+MIME-type along with the .adf file. If this is not the case, you will only see a broken icon instead of your 
+applet. 
+To solve this problem, consult your system administrator in order to associate the MIME-type 
+"juice/applet" to the filename-extension ".adf" in the HTML-server script. 
+
+2)  When using the Oberon web browser to load applets from a remote server, Juice requires that a 
+directory with the name "Juice" exists in the Oberon root directory. The "Juice" directory is used to store 
+temporary files. Most of the time, the "Juice" directory seems to be empty, since temporary files are 
+removed as soon as possible. However, this directory may never be removed for the Juice Authoring Tool 
+to work properly.
+
+
+
+The Juice Programming Interface
+
+This chapter explains the Juice applet programming interface (API) in detail and may be used as a 
+reference for programming applets. As you will see soon, the API has been kept small and consistent for 
+your convenience so that you will always keep the overall view. However, you will probably criticize that 
+the Juice API is too small and lacks support for programming advanced graphical user interfaces. For our 
+defense, keep in mind that our primary goal was to bring a new technology to the Internet rather than 
+developing another large class-framework. Since one of the primary design goals of the Juice architecture 
+was extensibility, additional functionality can easily be provided by third-party developers.
+
+
+1 Devices (Module JuiceDevices)
+
+1.1 The Device
+
+A Device is to Juice, what a GrafPort is to the MacOS, or a HDC (Handle to Device Context) to Windows 
+3.1 or Windows 95; the primary target for drawing operations. But unlike any other operating system, Juice 
+does not distinguish between printer ports and screen ports. The Juice architecture alone is responsible for 
+mapping the logical device to the actual physical device. This is very convenient since it does not add 
+unnecessary complexity to your programs. 
+Unlike Oberon the top left corner of the device is represented by the coordinates (0, 0) and the bottom right 
+corner by the coordinates (w-1, h-1). The color depth of the device (1, 2, 4, 8, 16, 32) is given in the field 
+depth, the physical horizontal and vertical resolution of the device in fields hres and vres.
+
+	TYPE
+		Device = POINTER TO DeviceDesc;
+(* Graphics device, might be a screen, printer or offscreen device *)
+		DeviceDesc = RECORD
+			w, h: INTEGER;	(* Width and height of device, top left ist always (0, 0) *)
+			depth: INTEGER;	(* Device color depth *)
+			hres, vres: INTEGER;	(* Horizontal and vertical resolution in pixel
+per inch *)
+		END;
+
+The most important thing that you have to know about devices is, that they have to be set up before 
+drawing, and that they have to be restored after drawing. Unfortunately this is a restriction imposed by the 
+Netscape plug-in architecture and cannot be avoided in any efficient way. So remember to always call 
+Setup() before drawing to a device and to always call Restore() after drawing to a device.
+
+(* Setup the device for subsequent drawing calls - This procedure MUST be invoked before the 
+first  drawing operation on a device *)
+	PROCEDURE Setup (D: Device);
+
+	(* Restore the device after previous drawing calls. This procedure MUST be invoked after the last 
+	drawing operation on a device *)
+	PROCEDURE Restore (D: Device);
+
+For efficiency reasons, you can also create additional offscreen-devices and copy blocks to the current 
+applet-device. Newly created offscreen devices are always initialized with white color. 
+			
+	(* Allocate a new offscreen device with width w, height h and given depth *)
+	PROCEDURE NewDevice (VAR D: Device; w, h, depth: INTEGER);
+
+	(* Copy block (sx, sy, w, h) from source device S to block (dx, dy, w, h) in destination device D 
+	Note: The source device must not be the applet's device since it could be a printer device *)
+	PROCEDURE CopyBlock (S, D: Device; sx, sy, w, h, dx, dy: INTEGER);
+	
+	CopyBlock(offscreen0, offscreen1, ...)	ok
+	CopyBlock(offscreen0, applet.device, ...)	ok
+	CopyBlock(applet.device, offscreen0, ...)	NOT OK!!!
+
+
+1.2 Clipping Masks
+
+Using clipping masks for drawing can simplify many operations. For instance, one way to draw a half-
+circle is to set the clipping mask to cover half the area where the circle will be drawn, then draw a full 
+circle. Basic clipping masks can either be created out of a rectangle (NewRectMask), an oval 
+(NewOvalMask), or a polygon (NewPolyMask). Complex clipping masks can be created by combining 
+basic or complex clipping masks by means of procedure DiffMask(), UnionMask(), and SectMask(). To 
+apply a clipping mask to a device, use the SetMask() procedure.
+
+	TYPE
+		Mask = POINTER TO MaskDesc;	(* Clipping mask *)
+		Point = RECORD x, y: INTEGER END;
+		
+	(* Create new clipping mask with a rectangular boundary x, y, w, h *)
+	PROCEDURE NewRectMask (VAR M: Mask; x, y, w, h: INTEGER);
+
+	(* Create new elliptic clipping mask with boundary x, y, w, h *)
+	PROCEDURE NewOvalMask (VAR M: Mask; x, y, w, h: INTEGER);
+
+	(* Create new clipping mask with a polyline boundary *)
+	PROCEDURE NewPolyMask (VAR M: Mask; VAR P: ARRAY OF Point; len: INTEGER);
+
+	(* Copy source mask S to destination mask D *)
+	PROCEDURE CopyMask (S: Mask; VAR D: Mask);
+
+	(* Calculate the difference D of source masks S0 and S1 *)
+	PROCEDURE DiffMask (S0, S1: Mask; VAR D: Mask);
+
+	(* Calculate the union D of source masks S0 and S1 *)
+	PROCEDURE UnionMask (S0, S1: Mask; VAR D: Mask);
+
+	(* Calculate the intersection D of source masks S0 and S1 *)
+	PROCEDURE SectMask (S0, S1: Mask; VAR D: Mask);
+
+	(* Set the clipping mask M for subsequent drawing operations *)
+	PROCEDURE SetMask (M: Mask);
+
+
+1.3 Setting Drawing Attributes
+
+In the Juice architecture, color information is always encoded as RGB-tuples, rather than as indexes to 
+color tables. This increases the degree of freedom for the underlying hardware to properly render graphics 
+primitives. The red, green, and blue value can range from 0 to 255. White is encoded as (255, 255, 255), 
+black as (0, 0, 0). Additionally, the most often used colors can be accessed directly by variables.
+
+	TYPE
+		RGBColor = RECORD	(* RGB color, red, green and blue in [0..255] *)
+			red, green, blue: INTEGER
+		END;
+
+	VAR
+		white, black, red, green, blue: RGBColor;	(* Default colors *)
+
+Unlike in Oberon, drawing attributes (e.g. linewidth, drawing color, fontsize) are never passed to a 
+procedure as parameters. For efficiency reasons drawing attributes always have to be changed by calls to 
+special procedures. They remain valid for subsequent drawing primitives until they are changed by calling 
+the same procedure again with different parameters.
+		
+	CONST
+		plainFace =  0;	(* Plain font face *)
+		boldFace =  1;	(* Bold font face *)
+		italicFace =  2;	(* italic font face *)
+
+	(* Set foreground color for subsequent calls; default is black *)
+	PROCEDURE SetForeColor (col: RGBColor);
+
+	(* Set line width for subsequent calls; default is 1 *)
+	PROCEDURE SetLineWidth (width: INTEGER);
+
+	(* Set font for subsequent calls; default is "Times" *)
+	PROCEDURE SetFont (fnt: ARRAY OF CHAR);
+
+	(* Set font face (plainFace, italicFace, boldFace) for subsequent calls; default is plainFace *)
+	PROCEDURE SetFontFace (face: INTEGER);
+
+	(* Set font size for subsequent calls; default is 10 *)
+	PROCEDURE SetFontSize (size: INTEGER);
+
+
+1.4 Drawing Primitives
+
+The drawing primitives that are provided with the Juice API are very much alike the drawing primitives 
+that are used in the MacOS or in Windows 3.1 and Windows 95. As an Oberon programmer just remember 
+that the top-left corner has the coordinates (0, 0). Also note that the border of a framed object is always 
+included in the boundary, even if the frame is more than one pixels wide.
+
+	TYPE
+		Point = RECORD x, y: INTEGER END;
+
+	(* Draw dot at position (x, y) with given color *)
+	PROCEDURE Dot (x, y: INTEGER);
+
+	(* Draw a line from (x0, y0) to (x1, y1). The point (x1, y1) is included *)
+	PROCEDURE Line (x0, y0, x1, y1: INTEGER);
+
+	(* Draw a polyline with points P. Len contains the number of points *)
+	PROCEDURE FramePolyLine (VAR P: ARRAY OF Point; len: INTEGER);
+
+	(* Draw a filled polyline with points P. Len contains the number of points *)
+	PROCEDURE FillPolyLine (VAR P: ARRAY OF Point; len: INTEGER);
+
+	(* Draw a rectangle (x, y, w, h). The rectangle is inside the boundary, even if the linewidth
+is greater than 0 *)
+	PROCEDURE FrameRect (x, y, w, h: INTEGER);
+
+	(* Draw a filled rectangle (x, y, w, h) *)
+	PROCEDURE FillRect (x, y, w, h: INTEGER);
+
+	(* Draw a circle or ellipse with boundary (x, y, w, h). The oval is inside the boundary, even if the 
+	linewidth is greater than 0 *)
+	PROCEDURE FrameOval (x, y, w, h: INTEGER);
+
+	(* Draw a filled circle or ellipse with boundary (x, y, w, h) *)
+	PROCEDURE FillOval (x, y, w, h: INTEGER);
+
+	(* Draw a string s at position (x, y) with previously set color, fontname, fontsize and fontface *)
+	PROCEDURE String (x, y: INTEGER; s: ARRAY OF CHAR);
+
+
+1.5 Font Metrics
+
+Advanced operations for text-rendering require detailed information about font-metrics. This support is 
+provided by procedures GetFontMetrics() and GetStringSize(). While procedure GetFontMetrics() returns 
+information about the characteristics of a font, procedure GetStringSize() automatically calculates the 
+width and height of a given string.
+
+	TYPE
+		FontMetric = RECORD
+			ascent: INTEGER;	(* Max distance above baseline *)
+			descent: INTEGER;	(* Max distance below baseline *)
+			leading: INTEGER;	(* Distance between lines *)
+		END;
+
+	(* Get metric data of current font *)
+	PROCEDURE GetFontMetrics (VAR metric: FontMetric);
+
+	(* Get width and height of given string s. Increment y by h to draw the next line *)
+	PROCEDURE GetStringSize (s: ARRAY OF CHAR; VAR w, h: INTEGER);
+
+
+2 Files (Module JuiceFiles)
+
+The purpose of module JuiceFiles is to implement the notion of a sequence of bytes stored on disk. Module 
+JuiceFiles exports the abstract data type File. A variable of type File identifies the data on the disk. For 
+security reasons, all files are located inside one flat filesystem.
+
+	TYPE
+		File = POINTER TO Handle;
+
+Several operations (e.g. create file, delete file, ...) can be applied to files:
+
+(* Creates a new file with the specified name. The same file descriptor is not returned with 
+multiple calls to New with the same filename (this results in multiple copies of a file with the 
+same name. i.e. the files are not registered in the directory). *)
+	PROCEDURE New (name: ARRAY OF CHAR): File;
+
+	(* Open an existing file. The same file descriptor is returned if a file is opened multiple times. *)
+	PROCEDURE Old (name: ARRAY OF CHAR): File;
+
+	(* Flushes the changes made to a file to disk. Register will automatically Close a file. *)
+	PROCEDURE Close (f: File);
+
+(* Register a file created with New in the directory, replacing the previous file in the directory 
+with  the same name. The file is automatically closed. *)
+	PROCEDURE Register (f: File);
+
+	(* Deletes a file. res = 0 indicates success. *)
+	PROCEDURE Delete (name: ARRAY OF CHAR; VAR res: INTEGER);
+
+	(* Renames a file. res = 0 indicates success. *)
+	PROCEDURE Rename (old, new: ARRAY OF CHAR; VAR res: INTEGER);
+
+	(* Deletes a file. *)
+	PROCEDURE Purge (f: File);
+
+	(* Returns length of file in bytes *)
+	PROCEDURE Length (f: File): LONGINT;
+
+	(* Returns the time (t) and date (d) of a file. *)
+	PROCEDURE GetDate (f: File; VAR t, d: LONGINT);
+
+	(* Returns the name of the file *)
+	PROCEDURE GetName (f: File; VAR name: ARRAY OF CHAR);
+
+Module JuiceFiles also exports the abstract data type Rider. An instance of type Rider is associated with a 
+file and affords read/write access. It is the rider, not the file, which has the property position (the point 
+where read/write actions take place.)
+
+	TYPE
+		Rider = RECORD
+			res: LONGINT;	(* result code *)
+			eof: BOOLEAN;	(* end of file flag *)
+		END;
+	
+	(* Positions a Rider at a certain position in a file. Multiple Riders can be positioned at different 
+	locations in a file. A Rider cannot be positioned beyond the end of a file. *)
+	PROCEDURE Set (VAR r: Rider; f: File; pos: LONGINT);
+
+	(* Returns the File a Rider is based on. *)
+	PROCEDURE Base (VAR r: Rider): File;
+
+	(* Returns the offset of a Rider positioned on a file. *)
+	PROCEDURE Pos (VAR r: Rider): LONGINT;
+	
+	(* Read operations. *)
+	PROCEDURE ReadChar (VAR R: Rider; VAR x: CHAR);
+	PROCEDURE ReadSInt (VAR R: Rider; VAR x: SHORTINT);
+	PROCEDURE ReadInt (VAR R: Rider; VAR x: INTEGER);
+	PROCEDURE ReadLInt (VAR R: Rider; VAR x: LONGINT);
+	PROCEDURE ReadSet (VAR R: Rider; VAR x: SET);
+	PROCEDURE ReadBool (VAR R: Rider; VAR x: BOOLEAN);
+	PROCEDURE ReadReal (VAR R: Rider; VAR x: REAL);
+	PROCEDURE ReadLReal (VAR R: Rider; VAR x: LONGREAL);
+	PROCEDURE ReadString (VAR R: Rider; VAR x: ARRAY OF CHAR);
+	PROCEDURE ReadNum (VAR R: Rider; VAR x: LONGINT);
+
+	(* Write operations. *)
+	PROCEDURE WriteChar (VAR R: Rider; x: CHAR);
+	PROCEDURE WriteSInt (VAR R: Rider; x: SHORTINT);
+	PROCEDURE WriteInt (VAR R: Rider; x: INTEGER);
+	PROCEDURE WriteLInt (VAR R: Rider; x: LONGINT);
+	PROCEDURE WriteSet (VAR R: Rider; x: SET);
+	PROCEDURE WriteBool (VAR R: Rider; x: BOOLEAN);
+	PROCEDURE WriteReal (VAR R: Rider; x: REAL);
+	PROCEDURE WriteLReal (VAR R: Rider; x: LONGREAL);
+	PROCEDURE WriteString (VAR R: Rider; x: ARRAY OF CHAR);
+	PROCEDURE WriteNum (VAR R: Rider; x: LONGINT);
+
+A special means is provided to access files over the World-Wide-Web. Since file transfers in Netscape and 
+Microsoft's Internet Explorer are asynchronous, a notifier procedure (also called callback-function) has to 
+be passed as a parameter to the RequestURL() procedure. This notifier procedure is called as soon as the 
+file has successfully been transfered. The data parameter in RequestURL() is directly passed to the notifier 
+procedure.
+
+	TYPE
+		Notifier = PROCEDURE (F: File; data: PTR);
+		
+	(* Start transfering the file with given URL and call notify after transfering the file. *)
+	PROCEDURE RequestURL (name: ARRAY OF CHAR; notify: Notifier; data: PTR);
+
+An example on how to use this mechanism can be found in the Sisiphus applet:
+
+	TYPE
+		Data = POINTER TO RECORD name: ARRAY 64 OF CHAR END;
+	
+	VAR
+		data: Data;	
+		
+	PROCEDURE LoadFig (F: JuiceFiles.File; data: PTR); (* read file *)
+	BEGIN
+		(* since data transfer is asynchronous, file "world" might arrive before file "icon" *)
+		WITH data: Data DO
+			IF data.name = "Sisiphus" THEN	(* load icon from F *)
+			ELSIF data.name = "World" THEN	(* load world from F *)
+			END
+		END
+	END LoadFig;
+
+	BEGIN (* module *)
+		(* request file Sisiphus.Icon from Server and call LoadFig when loaded *)
+		NEW(data); data.name := "Sisphus"; 
+		JuiceFiles.RequestURL("Sisiphus.Icon", LoadFig, data);
+		
+		(* request file World.Icon from Server and call LoadFig when loaded *)
+		NEW(data); data.name := "World"; 
+		JuiceFiles.RequestURL("http://ics.uci.edu/~juice/World.Icon", LoadFig, data);
+	END Sisiphus;
+
+
+3 Applets (Module JuiceApplets)
+
+3.1 Applets
+
+The base type of all Juice applets is Applet. Every applet has its predefined device that is allocated and set 
+by the Juice architecture. You must not change the applet's device by your own! 
+
+		Applet = POINTER TO AppletDesc;
+		AppletDesc = RECORD
+			handle: Handler;	(* message handler *)
+			device-: JuiceDevices.Device;	(* Applet's device to draw to / read-only *)
+		END;
+
+	VAR
+		newApplet: Applet;	(* Newly generated applets are returned here *)
+
+Procedures that are assigned to the field handle are termed handlers. The handler of every applet is 
+responsible for processing incoming messages. In other words, sending a message to an applet is done by 
+calling its handler procedure with the message as actual parameter. Handlers are of the following type.
+
+	TYPE
+		Handler = PROCEDURE (applet: Applet; VAR M: AppletMsg);
+
+	PROCEDURE AppletHandler (me: Applet; VAR M: AppletMsg);
+
+Procedure AppletHandler() is a predefined handler that "understands" the most important messages. 
+Whenever your applet does not handle incoming messages these messages should be forwarded to this 
+procedure by calling 
+
+	JuiceApplets.AppletHandler(me, M).
+
+Generating a new applet is quite easy. However you have to meet at least the following requirements: a 
+new applet has to be allocated, the message handler has to be installed, and the newly created object has to 
+be assigned to the variable JuiceApplets.newApplet. If you forget to do one of these things, your applet 
+won't work!
+
+	PROCEDURE NewApplet;
+		VAR a: MyApplet;
+	BEGIN
+		NEW(a);	(* Generate new applet *)
+		a.handle := MyAppletHandler;	(* Install message handler *)
+		JuiceApplets.newApplet := a
+(* Assign newly created applet to JuiceApplets.newApplet *)
+	END NewApplet;
+
+one of these things, your applet won't work!
+
+
+3.2 Applet Messages
+
+A message serves to communicate information from one applet to another, or from the host-application to 
+the applet. Messages are always passed as a parameter to a handler. The base type of all messages is 
+AppletMsg. Various other messages are extended from this type. 
+
+	CONST
+		update* = 0; resize* = 1;	(* DisplayMsg modes *)
+		get =  0; lose =  1;	(* FocusMsg modes *)
+
+	TYPE
+		(* Base type of all messages sent to applets. *)
+		AppletMsg = RECORD END;
+
+		(* Applets receive mouse messages to respond to mouse movement and button clicks. *)
+		MouseMsg = RECORD( AppletMsg ) 
+			x, y: INTEGER;	(* x, y position of mouse *)
+			buttons: SET	(* keys pressed {JuiceDevices.leftButton,
+					JuiceDevices.middleButton, JuiceDevices.rightButton} *)
+		END;
+
+		(* Applets receive keyboard messages to respond to keyboard input. *)
+		KeyboardMsg = RECORD( AppletMsg ) 
+			ch: CHAR	(* key pressed *)
+		END;
+
+		(* Applets receive display messages to redraw themselves. *)
+		DisplayMsg = RECORD( AppletMsg ) 
+			id: SHORTINT;	(* update, resize *)
+		END;
+
+		(* Applets are notified when they get or loose the focus *)
+		FocusMsg = RECORD( AppletMsg ) 
+			id: SHORTINT;	(* get, loose *)
+		END;
+
+		(* An init message is sent to every applet after it has been allocated. 
+		Here, you should initialize the device-space your applet uses by filling it with a 
+default color.  This is not done automatically by the Juice architecture, so that non-
+rectangular applets take on the background of the web page they reside in. *)
+		InitMsg = RECORD( AppletMsg )  END;
+
+		(* A destroy message is sent to every applet before reclaiming its storage. *)
+		DestroyMsg = RECORD( AppletMsg )  END;
+
+		(* Idle messages are sent to applets at fixed time intervals to facilitate background
+tasks. *)
+		IdleMsg = RECORD( AppletMsg )  END;
+
+The following procedure is a simple example handler that reacts to the display and keyboard message. 
+Examples on how to write advanced message handlers can be found in the enclosed example modules (e.g. 
+ClockApplets.Mod, SisiphusApplets.Mod, WireframeApplets.Mod).
+
+	PROCEDURE AppletHandler (me: JuiceApplets.Applet; VAR M: JuiceApplets.AppletMsg);
+	BEGIN
+		WITH me: MyApplet DO
+			IF M IS JuiceApplets.DisplayMsg THEN
+				WITH M: JuiceApplets.DisplayMsg DO
+					IF M.id = JuiceApplets.update THEN	
+						(* just refresh applet *)
+					ELSIF M.id = JuiceApplets.resize THEN	
+						(* resize and redraw applet *)
+					ELSE	
+						(* cannot handle message *)
+						JuiceApplets.AppletHandler(me, M)	
+					END
+				END
+			ELSIF M IS JuiceApplets.KeyboardMsg THEN
+				WITH M: JuiceApplets.KeyboardMsg DO
+					(* process keyboard input *)
+				END
+			ELSE
+				(* cannot handle message *)
+				JuiceApplets.AppletHandler(me, M)	
+			END
+		END
+	END AppletHandler;
+	
+Instead of sending a message to one specific applet, you can also broadcast a message to all visible applets 
+by means of
+	
+	(* Send message M to all currently visible applets. *)
+	PROCEDURE Broadcast (VAR M: AppletMsg);
+
+
+3.3 Reading Parameters
+
+Module JuiceApplets also provides functionality to read parameters that are specified in the applet 
+description file.
+
+	CONST
+		(* Parameter symbol classes.*)
+		Inval =  0;          (* Invalid symbol. *)
+		String =  2;        (* string s (length len). *)
+		Int =  3;             (* Integer i (decimal or hexadecimal). *)
+		Real =  4;          (* Real number x. *)
+		LongReal =  5;  (* Long real number y. *)
+		Char =  6;          (* Special character c. *)
+		NotFound =  7;	(* Parameter not found *)
+
+	TYPE
+		Param = RECORD
+			class: INTEGER;	(* Scan result: Int, Real, String etc. *)
+			i: LONGINT;	(* Integer value *)
+			x: REAL;	(* Real value *)
+			y: LONGREAL;	(* Longreal value *)
+			c: CHAR;	(* Character value *)
+			s: ARRAY 256 OF CHAR;	(* String value *)
+			len: SHORTINT;	(* Length of name or string scanned. *)
+		END;
+		
+	PROCEDURE GetParam (me: Applet; name: ARRAY OF CHAR; VAR value: Param);
+
+The following extract of a program gives an example on how to read parameters:
+
+	JuiceApplets.GetParam(me, "type", par);
+	IF (par.class = JuiceApplets.String) & (par.s = "digital") THEN digital := TRUE ELSE digital := 
+FALSE END;
+	JuiceApplets.GetParam(me, "size", par);
+	IF (par.class = JuiceApplets.Int) THEN size := par.i ELSE size := predefSize END;
+	JuiceApplets.GetParam(me, "ratio", par);
+	IF (par.class = JuiceApplets.Real) THEN ratio := par.x ELSE ratio := predefRatio END;
+
+It would yield the variable configuration (digital = TRUE; size = predefSize; ratio = 1.5) after reading the 
+following .adf file.
+
+	MyApplet.NewApplet
+	  ratio = 1.5
+	  type = digital
+	  
+	  
+	  
+4 Mathematical Functions (Module JuiceMath and JuiceMathL)
+
+Two mathematical libraries are provided by means of module JuiceMath which operates on REAL-
+numbers, and module JuiceMathL which operates on LONGREAL-numbers.
+	
+	CONST
+		e=   2.7182817E+00;
+		pi=   3.1415927E+00;
+
+	PROCEDURE Arctan (x: REAL): REAL;
+	PROCEDURE Cos (x: REAL): REAL;
+	PROCEDURE Exp (x: REAL): REAL;
+	PROCEDURE Ln (x: REAL): REAL;
+	PROCEDURE Sin (x: REAL): REAL;
+	PROCEDURE Sqrt (x: REAL): REAL;
+
+
+	CONST
+		e=  2.71828182845905D+000;
+		pi=  3.14159265358979D+000;
+
+	PROCEDURE Arctan (x: LONGREAL): LONGREAL;
+	PROCEDURE Cos (x: LONGREAL): LONGREAL;
+	PROCEDURE Exp (x: LONGREAL): LONGREAL;
+	PROCEDURE Ln (x: LONGREAL): LONGREAL;
+	PROCEDURE Sin (x: LONGREAL): LONGREAL;
+	PROCEDURE Sqrt (x: LONGREAL): LONGREAL;
+	  
+	  
+	  
+5 Miscellaneous Procedures (Module JuiceMisc)
+
+Module JuiceMisc implements two functions to determine the current date and time:
+
+	(* Return the current time in hours, minutes and seconds. *)
+	PROCEDURE GetTime (VAR hour, min, sec: INTEGER);
+
+	(* Return the current date in days, months and years. *)
+	PROCEDURE GetDate (VAR day, month, year: INTEGER);
+
+In future versions of Juice, this module is very likely to be extended by additional procedures.
+
+
+Conclusion
+
+We believe that Juice is a better technology than Java for bringing executable content to the World Wide 
+Web. Juice allows substantial amounts of software to be encoded space-efficiently, and to be compiled on-
+the-fly into high-quality code. The Juice architecture-neutral distribution format has a variety of properties 
+that make it inherently better suited for applications that require the speed of optimized object code.
+
+
+University of California, Irvine
+Michael Franz and Thomas Kistler
+22th October 1996 
+
+"Java" is a trademark owned by Sun Microsystems, Inc.
+"Juice" is a trademark owned by the Regents of the University of California
+"Slim Binaries" is a trademark owned by the Regents of the University of California
+ 
